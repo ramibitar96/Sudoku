@@ -1,0 +1,412 @@
+import java.util.ArrayList;
+import java.util.Arrays;
+
+/*
+ * Cs18000, lab 4, Sudoku 
+ * 
+ * @Author Max .J. Jacobson & Rami Bitar
+ * 13
+ * 
+ * @Start Date   10/21/2014
+ * 
+ * Sudoku solver
+ * 
+ */
+
+
+public class Sudoku
+{
+    
+    ///////////////////// constructors and instant vars /////////////////
+    
+    private int[][] master = new int[9][9];
+    private final int[][] listEm = {{0, 0, 0, 3, 3, 3, 6, 6, 6},
+        {0, 3, 6, 0, 3, 6, 0, 3, 6}};
+    
+    public Sudoku()
+    {
+        
+    }
+    
+    public Sudoku(int[][] board)
+    {
+        master = board.clone();
+    }
+    
+    ///////////////////// strategies ///////////////////////////////////
+    
+    public boolean nakedSingles()
+    {
+        int posit = 0;
+        int count = 0;
+        for (int y = 0; y < master.length; y++)    //searching through board
+        {
+            for (int x = 0; x < master[y].length; x++)
+            {
+                if (master[y][x] == 0)
+                {
+                    for (int i = 0; i < 10; i++)     //count candidates
+                    {
+                        if (candidates(y, x)[i] == true)
+                        {
+                            count++;
+                            posit = i + 1;
+                        }
+                    }
+                    if  (count == 1)
+                    {
+                        master[y][x] = posit;
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
+        
+    }
+  
+    ///////////////////// public methods ///////////////////////////////
+    
+    public void solve()
+    {
+        while (!isSolved() && (hiddenSingles()) || nakedSingles())
+        {
+            
+        }
+    }
+    
+    public boolean isSolved()
+    {
+        
+        int startX, startY;
+        
+        for (int r = 0; r < 9; r++)
+        {
+            for (int c = 0; c < 9; c++)
+            {
+                if (master[r][c] == 0)
+                {
+                    return false;
+                    
+                }
+                
+                startX = listEm[0][getBoxNum(r, c) - 1];
+                startY = listEm[1][getBoxNum(r, c) - 1];
+                
+                for (int ir = startY; ir < startY + 2; ir++)  //box
+                {
+                    for (int ic = startX; ic < startX + 2; ic++)
+                    {
+                        if (master[r][c] == master[ir][ic] && r != ir && c != ic)
+                        {
+                            return false;
+                        }
+                    }
+                }
+                
+                for (int i = 0; i < 9; i++)
+                {
+                    if (master[r][c] == master[i][c] && r != i)
+                    {
+                        return false;
+                    }
+                }
+                
+                for (int i = 0; i < 9; i++)
+                {
+                    if (master[r][c] == master[r][i]  && c != i)
+                    {
+                        return false;
+                    }
+                }
+                
+            }
+        }
+        
+        System.out.println("is solved. true");
+        
+        return true;
+        
+        
+    }
+    
+    public int[][] board()
+    {
+        return master;
+    }
+    
+    public boolean[] candidates(int row, int column)
+    {
+        boolean[] ret = new boolean[10];
+        int[] in = mergeAll(searchHorz(row),
+                            searchVert(column),
+                            searchBox(getBoxNum(row, column)));
+        
+        for (int i = 1; i < 10; i++)
+        {
+            for (int q = 0; q < in.length; q++)
+            {
+                if (in[q] == i)
+                {
+                    ret[i] = true;
+                }
+            }
+        }
+        return ret;
+    }
+    
+    public int[] candidatesNum(int row, int column)
+    {
+        int[] ret = mergeAll(searchHorz(row),
+                             searchVert(column),
+                             searchBox(getBoxNum(row, column)));
+        
+        
+        return ret;
+        
+    }
+    
+    //////////////////// helper methods ////////////////////////////////
+    
+    
+    /*
+     *  _ _ _
+     * |1 2 3|
+     * |4 5 6|
+     * |7 8 9|
+     *  =====
+     */
+    
+    public int getBoxNum(int row, int column)
+    {
+        short xPlace;
+        short yPlace;
+        
+        if (row < 3 && row >= 0)  // find x box
+        {
+            xPlace = 1;
+        }
+        else if (row < 6)
+        {
+            xPlace = 2;
+        }
+        else if (row < 9)
+        {
+            xPlace = 3;
+        }
+        else
+        {
+            xPlace = 0;
+            System.out.println("invalid cord input.");
+        }
+        
+        
+        
+        if (column < 3 && column >= 0)  // find y box
+        {
+            yPlace = 0;
+        }
+        else if (column < 6)
+        {
+            yPlace = 3;
+        }
+        else if (column < 9)
+        {
+            yPlace = 6;
+        }
+        else
+        {
+            yPlace = 0;
+            System.out.println("invalid cord input.");
+        }
+        
+        return (int)(xPlace + yPlace);
+        
+    }
+    
+    private int[] searchBox(int boxNum)
+    {
+        int startX = 0, startY = 0;
+        ArrayList<Integer> ret = new ArrayList<Integer>();
+        
+        startX = listEm[0][boxNum - 1];
+        startY = listEm[1][boxNum - 1];
+        
+        for (int i = 1; i < 10; i++)
+        {
+            ret.add(i);
+        }
+        
+        for (int row = startX; row < startX + 3; row++)
+        {
+            for (int col = startY; col < startY + 3; col++) 
+            {
+                
+                if (master[row][col] > 0 && master[row][col] < 10 && ret.indexOf(master[row][col]) != -1)
+                {
+                    ret.remove(ret.indexOf(master[row][col]));
+                }
+            }
+        }
+        
+        return toIntArray(ret);
+        
+    }
+    
+    private int[] searchHorz(int row)
+    {
+        ArrayList<Integer> ret = new ArrayList<Integer>();
+        
+        for (int i = 1; i < 10; i++)
+        {
+            ret.add(i);
+        }
+        
+        for (int i = 0; i < 9; i++)
+        {
+            
+            if (master[row][i] > 0 && master[row][i] < 10 && ret.indexOf(master[row][i]) != -1)
+            {
+                ret.remove(ret.indexOf(master[row][i]));
+            }
+        }
+        
+        return toIntArray(ret);
+    }
+    
+    private int[] searchVert(int column) 
+    {
+        ArrayList<Integer> ret = new ArrayList<Integer>();
+        
+        for (int i = 1; i < 10; i++)
+        {
+            ret.add(i);
+        }
+        
+        for (int i = 0; i < 9; i++)
+        {
+            
+            if (master[i][column] > 0 && master[i][column] < 10 && ret.indexOf(master[i][column]) != -1)
+            {
+                ret.remove(ret.indexOf(master[i][column]));
+            }
+        }
+        
+        return toIntArray(ret);
+    }
+    
+    public int[] mergeAll(int[] one, int[] two, int[] three)
+    {
+        Arrays.sort(one);
+        Arrays.sort(two);
+        Arrays.sort(three);
+        ArrayList<Integer> list1 = new ArrayList<Integer>();
+        ArrayList<Integer> list2 = new ArrayList<Integer>();
+        for (int i = 0; i < one.length; i++)
+        {
+            for (int j = 0; j < two.length; j++)
+            {
+                if (one[i] == two[j])
+                {
+                    list1.add(two[j]);
+                }
+            }
+        }
+        int[] temp = toIntArray(list1);
+        for (int i = 0; i < temp.length; i++)
+        {
+            for (int j = 0; j < three.length; j++)
+            {
+                if (temp[i] == three[j])
+                {
+                    list2.add(three[j]);
+                }
+            }
+        }
+        return toIntArray(list2);
+    }
+    
+    private static int[] toIntArray(ArrayList<Integer> list) 
+    {
+        int[] ret = new int[list.size()];
+        int i = 0;
+        for  (Integer e : list)  
+            ret[i++] = e.intValue();
+        Arrays.sort(ret);
+        return ret;
+    }
+    public boolean hiddenSingles()
+    {
+        int[] temp1;
+        int[] temp2;
+         for (int y = 0; y < master.length; y++)    //searching through board
+        {
+            for (int x = 0; x < master[y].length; x++)
+            {
+                if (master[y][x] == 0)
+                {
+                        temp1 = searchHorz(y);
+                        temp2 = searchVert(x);
+                        ArrayList<Integer> list1 = new ArrayList<Integer>();
+                        for (int i = 0; i < temp1.length; i++)
+                        {
+                            for (int j = 0; j < temp2.length; j++)
+                            {
+                                if (temp1[i] == temp2[j])
+                                {
+                                    list1.add(temp2[j]);
+                                }
+                            }
+                        }
+                        if  (list1.size() == 1)
+                            master[y][x] = list1.get(0);
+                        if  (temp1.length == 1)
+                            master[y][x]= temp1[0];
+                        if  (temp2.length == 1)
+                            master[y][x]= temp2[0];
+                }
+            }
+         }
+         return true;
+    }
+
+
+    public static void main(String[] args)
+    {
+        
+        
+        int[][] testBoard = {
+            {0,0,8,3,9,5,7,1,6},  //ans 2
+            {5,7,1,6,2,0,3,4,9},
+            {9,3,6,7,4,1,5,8,2},   //ans 1
+            {6,8,0,5,3,9,1,7,4},
+            {3,5,9,1,7,4,0,2,0},
+            {7,1,0,8,6,2,0,5,3},
+            {8,6,3,4,0,7,2,9,5},      
+            {1,9,5,0,8,6,4,3,7},
+            {4,0,7,9,5,3,8,6,1} };   //7
+        int[][] testBoard2 = new int[9][9];
+        for (int i = 0; i < 9; i++)
+            for (int j = 0; j < 9; j++)
+            testBoard2[i][j] = 0;
+
+        Sudoku k = new Sudoku(testBoard2);
+
+        k.solve();
+
+        
+        for (int r = 0; r < 9; r++)
+        {
+            for (int c = 0; c < 9; c++)
+            {
+                System.out.print(k.board()[r][c] + " ");
+            }
+            System.out.println();
+        }
+        
+        
+    }
+    
+}
+
